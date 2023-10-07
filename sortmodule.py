@@ -67,6 +67,8 @@ def draw_rectangle(given_turtle, width, height, fill_color):
 
 
 def draw_screen(screen_object, given_turtle, heights):
+	"""This will draw the entire screen full of rectangles before updating the display to show the
+	current step the algorithm is on"""
 	given_turtle.penup()
 	given_turtle.goto(MARGIN - (WIDTH / 2), MARGIN - (HEIGHT / 2))
 	given_turtle.pendown()
@@ -85,6 +87,7 @@ def main():
 	my_screen.setup(WIDTH, HEIGHT)
 	my_screen.title(TITLE)
 	my_screen.tracer(0)
+	my_screen.bgcolor("black")
 
 	rectangle_artist = turtle.Turtle()
 	rectangle_artist.pencolor("White")
@@ -93,8 +96,6 @@ def main():
 
 	current_order = random_order(NUMBER_OF_RECTANGLES)
 	correct_order = [i + 1 for i in range(NUMBER_OF_RECTANGLES)]
-	my_screen.tracer(0)
-	my_screen.bgcolor("black")
 
 	frames = 0
 
@@ -115,3 +116,4 @@ def main():
 
 if __name__ == "__main__":
 	main()
+	

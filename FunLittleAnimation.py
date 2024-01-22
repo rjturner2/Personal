@@ -13,18 +13,19 @@ HEIGHT = 600
 
 BALL_SIZE = 100
 BALL_COLOR = "green"
+BALL_WEIGHT = 20
 
 DELTA_TIME = 0.01
 
-GRAVITY = 18.6 * DELTA_TIME
+GRAVITY = 9.8 * DELTA_TIME * BALL_WEIGHT
 
 DAMPENING = 0.8  # Percentage of rebound velocity
 
 VERTICAL_DEBOUNCE = False
 HORIZONTAL_DEBOUNCE = False
 
-MIN_STARTING_VELOCITY = -20
-MAX_STARTING_VELOCITY = 20
+MIN_STARTING_VELOCITY = -100
+MAX_STARTING_VELOCITY = 100
 
 
 def draw_ball(my_turtle, x, y, size, color="white"):
@@ -103,9 +104,11 @@ def main():
 	my_turtle.penup()
 	my_turtle.hideturtle()
 
+	my_screen.title(f"{random_x_velocity}, {random_y_velocity}")
 	my_screen.tracer(0)
 
 	while True:
+
 		# Add gravitational constant
 		ball_velocity[1] -= GRAVITY
 
@@ -135,6 +138,7 @@ def main():
 
 			ball_location = [0, 0]
 			ball_velocity = [random_x_velocity, random_y_velocity]
+			my_screen.title(f"{random_x_velocity}, {random_y_velocity}")
 
 
 	my_screen.exitonclick()

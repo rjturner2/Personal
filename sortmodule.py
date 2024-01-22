@@ -8,17 +8,13 @@ Author: Ryley Turner
 import random
 import turtle
 import time
+import sys
 
 TITLE = "RSort 1.0"
 
 WIDTH = 1200
 HEIGHT = 800
 MARGIN = 40
-
-NUMBER_OF_RECTANGLES = 200
-
-width_delta = (WIDTH - MARGIN * 2) / NUMBER_OF_RECTANGLES
-height_scale = (HEIGHT - MARGIN * 2) / NUMBER_OF_RECTANGLES
 
 
 def current_sort(values):
@@ -52,6 +48,21 @@ def random_order(rectangle_quantity):
 	return heights
 
 
+def bubble_sort(value_list):
+	for i in range(len(value_list) - 1):
+		for j in range(len(value_list) - 1 - i):
+			if value_list[i] > value_list[i + 1]:
+				value_list[i], value_list[i + 1] = value_list[i + 1], value_list[i]
+			else:
+				break
+
+	return value_list
+			
+
+def bogosort(value_list):
+	return random_order(len(value_list))
+
+
 def draw_rectangle(given_turtle, width, height, fill_color):
 	"""Draws a rectangle with a given width and height using a provided turtle"""
 	given_turtle.fillcolor(fill_color)
@@ -66,21 +77,27 @@ def draw_rectangle(given_turtle, width, height, fill_color):
 	given_turtle.end_fill()
 
 
-def draw_screen(screen_object, given_turtle, heights):
+def draw_screen(screen_object, given_turtle, heights, number_of_rectangles):
 	"""This will draw the entire screen full of rectangles before updating the display to show the
 	current step the algorithm is on"""
+	width_delta = (screen_object.window_width() - MARGIN * 2) / number_of_rectangles
+	height_scale = (screen_object.window_height() - MARGIN * 2) / number_of_rectangles
+
 	given_turtle.penup()
-	given_turtle.goto(MARGIN - (WIDTH / 2), MARGIN - (HEIGHT / 2))
+	given_turtle.goto(MARGIN - (screen_object.window_width() / 2), MARGIN - (screen_object.window_height() / 2))
 	given_turtle.pendown()
 
-	for height in heights:
-		draw_rectangle(given_turtle, width_delta, height * height_scale, "white")
+	for i in range(len(heights)):
+		draw_rectangle(given_turtle, width_delta, heights[i] * height_scale, "white")
 		given_turtle.forward(width_delta)
 
 	screen_object.update()
 
 
 def main():
+	sorting_method = sys.argv[1]
+	NUMBER_OF_RECTANGLES = int(input("How many rectangles would you like to sort?: "))
+
 	runtime = time.time()
 
 	my_screen = turtle.Screen()
@@ -90,7 +107,7 @@ def main():
 	my_screen.bgcolor("black")
 
 	rectangle_artist = turtle.Turtle()
-	rectangle_artist.pencolor("White")
+	rectangle_artist.pencolor("black")
 	rectangle_artist.hideturtle()
 	rectangle_artist.speed(0)
 
@@ -101,16 +118,16 @@ def main():
 
 	while current_order != correct_order:
 		rectangle_artist.clear()
-		draw_screen(my_screen, rectangle_artist, current_order)
-		current_order = current_sort(current_order)
+		draw_screen(my_screen, rectangle_artist, current_order, NUMBER_OF_RECTANGLES)
+		current_order = eval(f"{sorting_method}(current_order)")
 		frames += 1
 	
 	rectangle_artist.clear()
-	draw_screen(my_screen, rectangle_artist, current_order)
+	draw_screen(my_screen, rectangle_artist, current_order, NUMBER_OF_RECTANGLES)
 
 	runtime = time.time() - runtime
 
-	print(f"Sorted {NUMBER_OF_RECTANGLES} rectangles in {runtime:.2f} seconds using {frames} comparisons.")
+	my_screen.title(f"Sorted {NUMBER_OF_RECTANGLES} rectangles in {runtime:.2f} seconds using {frames} comparisons.")
 	my_screen.exitonclick()
 
 

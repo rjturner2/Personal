@@ -22,7 +22,7 @@ GRID_DENSITY_HEIGHT = 30
 MARGIN = 20
 BOX_WIDTH = (RESOLUTION_X - MARGIN * 2) / GRID_DENSITY_WIDTH
 BOX_HEIGHT = (RESOLUTION_Y - MARGIN * 2) / GRID_DENSITY_HEIGHT
-FPS = 3
+FPS = 5
 
 # We will store the Snake as a list and the length the snake should be as an integer
 snake = [(GRID_DENSITY_WIDTH // 2 - 1, GRID_DENSITY_HEIGHT // 2 - 1)]
@@ -220,6 +220,9 @@ def animate():
     for position in snake:
         new_snake.append(position)
 
+    if new_snake[0] in snake:
+        game_running = False
+
     # If our new snake is longer than it is supposed to be (Which should only ever be by one) we 
     # want to pop the tail of the snake off.
     if len(new_snake) > snake_length:
@@ -245,9 +248,14 @@ def animate():
 
     # Finally we want to queue up the next frame of animation so we can do it all again.
     if game_running:
+        canvas.title(f"Snake Length: {len(snake)}")
         canvas.ontimer(animate, sleep_time)
 
-    canvas.title(f"Snake Length: {len(snake)}")
+    else:
+        canvas.clear()
+        canvas.bgcolor("white")
+        canvas.title("GAME OVER")
+
 
 
 if __name__ == "__main__":

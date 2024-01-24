@@ -6,6 +6,7 @@ Author: (Ryley Turner)
 """
 
 import turtle
+import random
 
 # Constant that determines if the game is currently running
 game_running = True
@@ -21,79 +22,100 @@ GRID_DENSITY_HEIGHT = 30
 MARGIN = 20
 BOX_WIDTH = (RESOLUTION_X - MARGIN * 2) / GRID_DENSITY_WIDTH
 BOX_HEIGHT = (RESOLUTION_Y - MARGIN * 2) / GRID_DENSITY_HEIGHT
-FPS = 5
+FPS = 3
 
 # We will store the Snake as a list and the length the snake should be as an integer
 snake = [(GRID_DENSITY_WIDTH // 2 - 1, GRID_DENSITY_HEIGHT // 2 - 1)]
 snake_length = 1
+has_eaten = False
+
+# We need to setup where the food will be
+food_location = (random.randint(0, GRID_DENSITY_WIDTH), random.randint(0, GRID_DENSITY_HEIGHT))
+print(food_location)
 
 # Snake specific Boolean constants
 HEADING = [False for _ in range(4)]
-HAS_EATEN = False
 RIGHT = 0
 DOWN = 1
 LEFT = 2
 UP = 3
+HEADING[UP] = True
 
-sleep_time = 1000 / FPS
+sleep_time = int(round(1000 / FPS))
 canvas, draw = turtle.Screen(), turtle.Turtle()
 
 
 def main():
+    # We need to do some basic setup of our screen, including dimensions and turtle housekeeping items
     setup()
-    temporary_draw_boxes()
+
+    # We'll draw the bounding boxes if we have that debug option enabled
+    if DRAW_BOXES:
+        debug_draw_boxes()
+
+    # Now we'll setup our key bindings, which allow us to actually play the game
     setup_key_bindings()
+
+    # Finally we will call our animate function, which creates and displays the next frame of our game
     animate()
 
+    # We also need to call mainloop so that our events are handled correctly
     canvas.mainloop()
 
 
 def get_indecies(x_pixel, y_pixel):
+    # First we will grab our current width and height of the window, just incase the user has
+    # resized the window
     width, height = canvas.window_width(), canvas.window_height()
+
+    # Then we assign our indexes based on integer division of the remaining amount of pixels we have
+    # after we account for the margins on either side of the screen
     x_index, y_index = (x_pixel + width / 2) // BOX_WIDTH, (y_pixel + height / 2) // BOX_HEIGHT
 
-    return int(x_index), int(y_index)
+    # Then we convert those suckers to ints and send them on their way
+    return int(x_index) - 1, int(y_index) - 1
 
 
-def get_draw_pos():
+def draw_box(fill="white"):
+    # first we start actually drawing the outline of the box we are on
+    draw.pendown()
+    draw.fillcolor(fill)
+    draw.begin_fill()
 
-    return get_indecies(draw.xcor(), draw.ycor())
-
-
-def draw_box():
-    if DRAW_BOXES:
-        draw.pendown()
-
+    # Then we draw the box!
     for _ in range(2):
         draw.forward(BOX_WIDTH)
-        draw.right(90)
+        draw.left(90)
         draw.forward(BOX_HEIGHT)
-        draw.right(90)
+        draw.left(90)
+
+    draw.end_fill()
+
+    # Last we need to pull the pen back up in case between calls of this function we move the
+    # turtle all around our screen
+    draw.penup()
+
+def debug_draw_boxes():
+    width, height = canvas.window_width(), canvas.window_height()
+    draw.goto(-width / 2 + MARGIN, -height / 2 + MARGIN)
+
+    for i in range(GRID_DENSITY_HEIGHT):
+        for _ in range(GRID_DENSITY_WIDTH):
+            draw.setheading(0)
+            draw_box()
+            draw.forward(BOX_WIDTH)
+        draw.goto(-width / 2 + MARGIN, -height / 2 + BOX_HEIGHT * (i + 1) + MARGIN)
+
+
+def update_box(x_index, y_index):
+    half_width, half_height = canvas.window_width() / 2, canvas.window_height() / 2
+    x_pixel, y_pixel = x_index * BOX_WIDTH + MARGIN - half_width, y_index * BOX_HEIGHT + MARGIN - half_height
 
     draw.penup()
 
-def temporary_draw_boxes():
-    width, height = canvas.window_width(), canvas.window_height()
-    draw.goto(-width / 2 + MARGIN, height / 2 - MARGIN)
+    draw.goto(x_pixel, y_pixel)
 
-    for i in range(GRID_DENSITY_HEIGHT):
-        for _ in range(GRID_DENSITY_WIDTH):
-            draw.setheading(0)
-            draw_box()
-            draw.forward(BOX_WIDTH)
-        draw.goto(-width / 2 + MARGIN, height / 2 - BOX_HEIGHT * (i + 1) - MARGIN)
-
-
-def update_boxes():
-    width, height = canvas.window_width(), canvas.window_height()
-    draw.goto(-width / 2 + MARGIN, height / 2 - MARGIN)
-
-    for i in range(GRID_DENSITY_HEIGHT):
-        for _ in range(GRID_DENSITY_WIDTH):
-            draw.setheading(0)
-            draw_box()
-            draw.forward(BOX_WIDTH)
-        draw.goto(-width / 2 + MARGIN, height / 2 - BOX_HEIGHT * (i + 1) - MARGIN)
+    draw_box()
 
 
 def print_coords(x, y):
@@ -149,13 +171,16 @@ def setup_key_bindings():
     canvas.onkeypress(heading_left, "Left")
     canvas.onkeypress(heading_down, "Down")
     canvas.onkeypress(heading_right, "Right")
-    canvas.onkeypress(heading_up, "W")
-    canvas.onkeypress(heading_left, "A")
-    canvas.onkeypress(heading_down, "S")
-    canvas.onkeypress(heading_right, "D")
+    canvas.onkeypress(heading_up, "w")
+    canvas.onkeypress(heading_left, "a")
+    canvas.onkeypress(heading_down, "s")
+    canvas.onkeypress(heading_right, "d")
 
     canvas.ontimer(animate, sleep_time)
+    canvas.listen()
 
+    # This is just a debug option I setup so that I could see exactly where the bounding box of each
+    # in-game "pixel" was vs. where I thought it was
     if PRINT_INDEXES:
         canvas.onclick(print_coords)
 
@@ -166,19 +191,27 @@ def animate():
     global snake
     global snake_length
     global game_running
+    global has_eaten
+    global food_location
     new_snake = []
 
+    # I want to look at if the snake's head is occupying the same position as the food pretty
+    # early on.
+    if snake[0] == food_location:
+        has_eaten += 1
+        food_location = (random.randint(0, GRID_DENSITY_WIDTH), random.randint(0, GRID_DENSITY_HEIGHT))
+
     # Now we look at what our heading is, and place the head of the snake one more in that direction
-    if HEADING[LEFT] and snake[0][0] > 0:
+    if HEADING[LEFT] and snake[0][0] >= 0:
         new_snake.append((snake[0][0] - 1, snake[0][1]))
 
-    elif HEADING[DOWN] and snake[0][1] > 0:
+    elif HEADING[DOWN] and snake[0][1] >= 0:
         new_snake.append((snake[0][0], snake[0][1] - 1))
 
-    elif HEADING[RIGHT] and snake[0][0] < GRID_DENSITY_WIDTH:
+    elif HEADING[RIGHT] and snake[0][0] <= GRID_DENSITY_WIDTH:
         new_snake.append((snake[0][0] + 1, snake[0][1]))
 
-    elif HEADING[UP] and snake[0][1] < GRID_DENSITY_HEIGHT:
+    elif HEADING[UP] and snake[0][1] <= GRID_DENSITY_HEIGHT:
         new_snake.append((snake[0][0], snake[0][1] + 1))
 
     # This functions as our edge detection, since if we go outside of 0 or the horizontal or vertical
@@ -187,16 +220,8 @@ def animate():
         game_running = False
 
     # Now we append all previous positions the snake occupied to the new/temporary snake
-    for posiition in snake:
+    for position in snake:
         new_snake.append(position)
-
-    # We also want to update the total length of the snake if we have eaten
-    if HAS_EATEN:
-        snake_length += 1
-        HAS_EATEN = False
-
-    # UPDATE SCREEN
-    
 
     # If our new snake is longer than it is supposed to be (Which should only ever be by one) we 
     # want to pop the tail of the snake off.
@@ -207,9 +232,25 @@ def animate():
     # That the player wanted to move in
     snake = new_snake.copy()
 
+    # We also want to update the total length of the snake if we have eaten
+    if has_eaten:
+        snake_length += 1
+        has_eaten = False
+
+    # UPDATE SCREEN
+    # First we need to clear the screen
+    draw.clear()
+
+    for coordinate_pair in snake:
+        update_box(coordinate_pair[0], coordinate_pair[1])
+
+    update_box(food_location[0], food_location[1])
+
     # Finally we want to queue up the next frame of animation so we can do it all again.
     if game_running:
         canvas.ontimer(animate, sleep_time)
+
+    canvas.title(f"Snake Length: {len(snake)}")
 
 
 if __name__ == "__main__":

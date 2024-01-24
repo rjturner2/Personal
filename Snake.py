@@ -56,9 +56,6 @@ def main():
     # Now we'll setup our key bindings, which allow us to actually play the game
     setup_key_bindings()
 
-    # Finally we will call our animate function, which creates and displays the next frame of our game
-    animate()
-
     # We also need to call mainloop so that our events are handled correctly
     canvas.mainloop()
 
